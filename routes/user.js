@@ -3,6 +3,10 @@ var router = express.Router();
 require('../models/connection');
 const User = require('../models/user');
 const Project = require('../models/project')
+const Document = require('../models/document');
+const CarnetBebe = require('../models/carnetBebe');
+const Enfant = require('../models/enfant');
+const Rdv = require('../models/rdv');
 const { checkBody } = require('../modules/checkBody');
 const uid2 = require('uid2');
 const bcrypt = require('bcrypt');
@@ -102,35 +106,65 @@ router.post('/signup/:source?', async (req, res) => {
 
 //route signIn to log in ,retake all project 's data 
 router.post('/signin', (req, res) => {
-    //to check if field correctly completed
+    // check require fields
     if (!checkBody(req.body, ['username', 'password'])) {
-        res.json({ result: false, error: 'Missing or empty fields' });
-        return;
+        return res.json({ result: false, error: 'Missing or empty fields' });
     }
 
-    // Chercher le user dans le User collection avec le username
+    // find user with the username in User collection
     User.findOne({ username: req.body.username })
-        .then(data => {
-            console.log('data.prenom: ', data.prenom)
-            console.log('data.id: ', data.id)
-            if (data && bcrypt.compareSync(req.body.password, data.password)) {
-                
-                // Puis chercher le project ObjectId dans le collection Project
-                Project.findOne({ proprietaire: data._id })
-                    .populate('proprietaire') // pour afficher le proprietaire
-                    .then(data => {
-                        console.log("- trouve le project 📢")
-                        console.log(data);
-                        console.log(`data.proprietaire: ${data.proprietaire}`);
-                        res.json({ result: true, data })
-                    });
-            }
-            else {
-                res.json({ result: false, error: 'Utilisateur non trouvé ou mot de passe erroné' });
+        .then(user => {
+            if (!user) {
+                return res.json({ result: false, error: 'Utilisateur non trouvé' });
             }
 
+            // check password
+            if (!bcrypt.compareSync(req.body.password, user.password)) {
+                return res.json({ result: false, error: 'Mot de passe erroné' });
+            }
+
+            // find project in the Project Collection
+            Project.findOne({ proprietaire: user._id })
+                .populate('proprietaire') // to show owner
+                .then(project => {
+                    if (!project) {
+                        return res.json({ result: false, error: 'Aucun projet trouvé' });
+                    }
+
+                    const responseData = {
+                        result: true,
+                        data: project,
+                        editeurLecteur: project.editeurLecteur,
+                        lecteur: project.lecteur,
+                    };
+
+                    // find all information of the project in differents collections
+                    return Promise.all([
+                        CarnetBebe.findOne({ carnetBebe: project.carnetBebe }).populate('carnetBebe'),
+                        Rdv.findOne({ rdv: project.rdv }).populate('rdv'),
+                        Document.findOne({ document: project.document }).populate('document'),
+                        Enfant.findOne({ document: project.enfant }).populate('enfant')
+                    ])
+                    .then(([carnetBebeData, rdvData, documentData, enfantData]) => {
+                        responseData.carnetBebeArr = carnetBebeData ? carnetBebeData.carnetBebe : [];
+                        responseData.rdvArr = rdvData ? rdvData.rdv : [];
+                        responseData.documentArr = documentData ? documentData.document : [];
+                        responseData.enfantArr = enfantData ? enfantData.enfant : [];
+
+                        res.json(responseData);
+                    });
+                })
+                .catch(error => {
+                    console.error(error);
+                    res.json({ result: false, error: 'Erreur lors de la recherche du projet' });
+                });
+        })
+        .catch(error => {
+            console.error(error);
+            res.json({ result: false, error: 'Erreur lors de la recherche de l\'utilisateur' });
         });
 });
+
 
 
 //route to delete an user (not owner of project)

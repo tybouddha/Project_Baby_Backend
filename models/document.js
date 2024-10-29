@@ -11,6 +11,6 @@ const documentSchema = mongoose.Schema({
     project: { type: mongoose.Schema.Types.ObjectId, ref: 'projects' },
 })
 
-const Document = mongoose.model("documents", userSchema)
+const Document = mongoose.model("documents", documentSchema)
 
 module.exports = Document

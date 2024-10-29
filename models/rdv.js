@@ -11,6 +11,6 @@ const rdvSchema = mongoose.Schema({
     project: { type: mongoose.Schema.Types.ObjectId, ref: 'projects' },
 })
 
-const Rdv = mongoose.model("rdvs", userSchema)
+const Rdv = mongoose.model("rdvs", rdvSchema)
 
 module.exports = Rdv
