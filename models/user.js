@@ -11,8 +11,6 @@ const userSchema = mongoose.Schema({
     email: String,
     password: String,
     token: String,
-    proprietaire: Boolean,
-    role: { type: String, enum: ['lecteur', 'editeur'], default: 'lecteur' }
 })
 
 const User = mongoose.model("users", userSchema)
