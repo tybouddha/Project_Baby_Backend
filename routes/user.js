@@ -17,8 +17,8 @@ router.post('/signup/:source?', async (req, res) => {
     try {
         // check if invite exist
         if (isInviteLink) {
-            bodyFields = ['username', 'password']; 
-            
+            bodyFields = ['username', 'password'];
+
             // check required fields
             if (!checkBody(req.body, bodyFields)) {
                 return res.json({ result: false, error: 'Champs manquant ou mal renseigné' });
@@ -33,7 +33,7 @@ router.post('/signup/:source?', async (req, res) => {
                     password: hash,
                     token: uid2(32),
                 });
-                
+
                 // save user
                 await newUser.save();
                 return res.json({ result: true, token: newUser.token });
@@ -82,12 +82,12 @@ router.post('/signup/:source?', async (req, res) => {
 
                 // save user
                 const savedUser = await newUser.save();
-                
+
                 // Create new project
                 const newProject = new Project({ proprietaire: savedUser._id });
                 const savedProject = await newProject.save();
 
-                return res.json({ result: true, newProject: savedProject, token : newUser.token, newUser: newUser});
+                return res.json({ result: true, newProject: savedProject, token: newUser.token, newUser: newUser });
             } else {
                 return res.json({ result: false, error: 'Utilisateur existe déjà!' });
             }
@@ -102,48 +102,50 @@ router.post('/signup/:source?', async (req, res) => {
 
 //route signIn to log in ,retake all project 's data 
 router.post('/signin', (req, res) => {
-//to check if field correctly completed
+    //to check if field correctly completed
     if (!checkBody(req.body, ['username', 'password'])) {
         res.json({ result: false, error: 'Missing or empty fields' });
         return;
     }
+
+    // Chercher le user dans le User collection avec le username
     User.findOne({ username: req.body.username })
-    .then(data => {
-        if (data && bcrypt.compareSync(req.body.password, data.password)) {
-            Project.findOne({ proprietaire: proprietaire[0] })
-            .then(project => {
-                const response = { result: true, token: data.token };
-                if (project) {
-                    console.log( project)
-                    response.proprietaire = user_id;
-                }
-                return res.json(response);
+        .then(data => {
+            console.log('data.prenom: ', data.prenom)
+            console.log('data.id: ', data.id)
+            if (data && bcrypt.compareSync(req.body.password, data.password)) {
                 
-            })
-        
-        } else {
-        res.json({ result: false, error: 'Utilisateur non trouvé ou mot de passe erroné' });
-        }
-    });
+                // Puis chercher le project ObjectId dans le collection Project
+                Project.findOne({ proprietaire: data._id })
+                    .populate('proprietaire') // pour afficher le proprietaire
+                    .then(data => {
+                        console.log("- trouve le project 📢")
+                        console.log(data);
+                        console.log(`data.proprietaire: ${data.proprietaire}`);
+                        res.json({ result: true, data })
+                    });
+            }
+            else {
+                res.json({ result: false, error: 'Utilisateur non trouvé ou mot de passe erroné' });
+            }
+
+        });
 });
 
 
 //route to delete an user (not owner of project)
 router.delete("/delete", (req, res) => {
 
-User.findOne({username: req.body.username}).then((userFound) => {
-    if (userFound) {
-        User.deleteOne({username: req.body.username }).then((userDeleted) => {
-            return res.json({ result: true })
-        })
-    } else {
-        return res.json({ result: false, error: "Utilisateur non trouvé" })
-    }
+    User.findOne({ username: req.body.username }).then((userFound) => {
+        if (userFound) {
+            User.deleteOne({ username: req.body.username }).then((userDeleted) => {
+                return res.json({ result: true })
+            })
+        } else {
+            return res.json({ result: false, error: "Utilisateur non trouvé" })
+        }
+    })
 })
-})
-
-
-
 
 
 
