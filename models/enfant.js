@@ -11,6 +11,6 @@ const enfantSchema = mongoose.Schema({
     project: { type: mongoose.Schema.Types.ObjectId, ref: 'projects' },
 })
 
-const Enfant = mongoose.model("enfants", userSchema)
+const Enfant = mongoose.model("enfants", enfantSchema)
 
 module.exports = Enfant

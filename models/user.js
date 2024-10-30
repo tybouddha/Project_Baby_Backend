@@ -6,11 +6,11 @@ const userSchema = mongoose.Schema({
     prenom: String,
     nomDeFamille: String,
     username: String,
-    derniereMenstruation: Date,
-    dateDebutGrossesse: Date,
+    derniereMenstruation: Date || Boolean,
+    dateDebutGrossesse: Date || Boolean,
     email: String,
     password: String,
-    token: String
+    token: String,
 })
 
 const User = mongoose.model("users", userSchema)
