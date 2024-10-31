@@ -7,12 +7,12 @@ const User = require("../models/user");
 const { checkBody } = require("../modules/checkBody");
 
 //route post
-router.post("/", async (req, res) => {
+router.post("/:userToken", async (req, res) => {
   const bodyFields = ["date", "pourQui", "lieu", "practicien"];
 
   // check if fiels are empty or misinformed
   if (!checkBody(req.body, bodyFields)) {
-    return res.json({
+    res.json({
       result: false,
       error: "Champs manquant ou mal renseigné",
     });
