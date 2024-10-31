@@ -330,4 +330,26 @@ router.delete("/delete", (req, res) => {
   });
 });
 
+router.get("/:token", (req, res) => {
+  User.findOne({ token: req.params.token }).then((UserData) => {
+    if (!UserData) {
+      return res.json({ result: false, error: "Utilisateur non trouvé" });
+    } else {
+      res.json({ result: true, user: UserData });
+    }
+  });
+});
+router.post("/:token", (req, res) => {
+  User.updateMany(
+    { Username: `${Username}` },
+    { email: `${email}`, dateDebutGrossesse: `${grossesse}` },
+    { dateDebutGrossesse: `${grossesse}` },
+    { derniereMenstruation: `${menstruation}` },
+    { password: `${password2}` }
+  ).then(() => {
+    User.find().then((data) => {
+      console.log(data);
+    });
+  });
+});
 module.exports = router;
