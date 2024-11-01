@@ -3,48 +3,57 @@ var router = express.Router();
 require("../models/connection");
 const Rdv = require("../models/rdv");
 const Project = require("../models/project");
-const User = require("../models/user");
 const { checkBody } = require("../modules/checkBody");
 
-//route post
-router.post("/:userToken", async (req, res) => {
-  const bodyFields = ["date", "pourQui", "lieu", "practicien"];
+router.post("/:tokenProject", async (req, res) => {
+  const { pourQui, practicien, lieu, notes, date, heure } = req.body;
 
-  // check if fiels are empty or misinformed
-  if (!checkBody(req.body, bodyFields)) {
-    res.json({
-      result: false,
-      error: "Champs manquant ou mal renseigné",
-    });
+  if (
+    !checkBody(req.body, ["pourQui", "practicien", "lieu", "date", "heure"])
+  ) {
+    return res.json({ result: false, error: "Missing or empty fields" });
   }
 
   try {
-    // check if project exist with proprietaire user id
-    const project = await Project.findOne()({
-      proprietaire: req.body.proprietaire,
-    });
+    // find project with token project
+    const project = await Project.findOne({ token: req.params.tokenProject });
+    console.log(project);
     if (!project) {
-      return res.json({ result: false, error: "Projet introuvable." });
+      return res.status(404).json({ message: "Projet non trouvé" });
     }
-
-    // create new Rdv
+    // create new rdv
     const newRdv = new Rdv({
-      date: req.body.date,
-      pourQui: req.body.pourQui,
-      practicien: req.body.practicien,
-      lieu: req.body.lieu,
-      notes: req.body.notes,
+      pourQui,
+      practicien,
+      lieu,
+      notes,
+      date: new Date(date),
+      heure,
     });
-
-    // save it in bdd
     const savedRdv = await newRdv.save();
     project.rdv.push(savedRdv._id);
     await project.save();
+    // const rdvInstant = await Rdv.findOne({ _id: savedRdv._id });
+    // console.log("BIYR", rdvInstant);
+    // const tempRdv = [...project.rdv, savedRdv._id];
+    // console.log(tempRdv);
 
-    res.json({ result: true, rdv: newRdv });
-  } catch (err) {
-    console.log(err);
-    res.json({ result: false, error: "Erreur interne du serveur" });
+    // if (rdvInstant) {
+    //   const updatedProject = await Project.updateOne(
+    //     { token: req.params.tokenProject },
+    //     { rdv: tempRdv }
+    //   );
+    // }
+    // console.log("updated project :", updatedProject);
+
+    // save project maj
+    // await project.save();
+
+    res.json({ message: "Rendez-vous ajouté avec succès", rendezvous: newRdv });
+  } catch (error) {
+    console.log(error);
+    console.error("Erreur lors de l'ajout du rendez-vous :", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
