@@ -63,10 +63,10 @@ router.post("/signupProject", async (req, res) => {
     const newProject = new Project({
       proprietaire: savedUser._id,
       token: uid2(32),
-      carnetBebe: req.body.carnetBebe || null,
-      rdv: req.body.rdv || null,
-      document: req.body.document || null,
-      enfant: req.body.enfant || null,
+      carnetBebe: req.body.carnetBebe || [],
+      rdv: req.body.rdv || [],
+      document: req.body.document || [],
+      enfant: req.body.enfant || [],
     });
     //save project
     const savedProject = await newProject.save();
@@ -295,9 +295,6 @@ router.post("/signin", (req, res) => {
             responseData.token = user.token;
             responseData.username = user.username;
             res.json(responseData);
-
-            // Reponse s'addendu par Redux:
-            // {user_token, project.id,username,prenom, documentsArr, carnetBebeArr, rdvArr}
           });
         })
         .catch((error) => {
