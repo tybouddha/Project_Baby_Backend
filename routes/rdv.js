@@ -42,22 +42,6 @@ router.post("/:tokenProject", async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-// futur route pour telecharger les données rdv dan les onglets agendas
-
-router.get("/:years/:month", (req, res) => {
-  Rdv.find({ years: req.params.years, month: req.params.month }).then(
-    (rdvData) => {
-      if (!rdvData) {
-        return res.json({ result: false, error: "Utilisateur non trouvé" });
-      } else {
-        res.json({ result: true, rdv: rdvData });
-      }
-      console.log(rdvData);
-    }
-  );
-});
-=======
 //route get pour rechercher un rendez-vous par practicien
 router.get("/:tokenProject", async (req, res) => {
   try {
@@ -79,5 +63,4 @@ router.get("/:tokenProject", async (req, res) => {
   }
 });
 
->>>>>>> rdv
 module.exports = router;
