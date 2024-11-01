@@ -258,11 +258,13 @@ router.post("/signin", (req, res) => {
       if (!bcrypt.compareSync(req.body.password, user.password)) {
         return res.json({ result: false, error: "Mot de passe erroné" });
       }
-
+      console.log(user._id);
       // find project in the Project Collection
       Project.findOne({ proprietaire: user._id })
         .populate("proprietaire") // to show owner
         .then((project) => {
+          console.log("test");
+          console.log(project);
           if (!project) {
             return res.json({ result: false, error: "Aucun projet trouvé" });
           }
@@ -277,13 +279,13 @@ router.post("/signin", (req, res) => {
           // find all information of the project in differents collections
           return Promise.all([
             CarnetBebe.findOne({ carnetBebe: project.carnetBebe }).populate(
-              "carnetBebe"
+              "project"
             ),
-            Rdv.findOne({ rdv: project.rdv }).populate("rdv"),
+            Rdv.findOne({ rdv: project.rdv }).populate("project"),
             Document.findOne({ document: project.document }).populate(
-              "document"
+              "project"
             ),
-            Enfant.findOne({ document: project.enfant }).populate("enfant"),
+            Enfant.findOne({ document: project.enfant }).populate("project"),
           ]).then(([carnetBebeData, rdvData, documentData, enfantData]) => {
             responseData.carnetBebeArr = carnetBebeData
               ? carnetBebeData.carnetBebe
