@@ -87,6 +87,8 @@ router.post("/signupProject", async (req, res) => {
       email: savedUser.email,
     });
   } catch (err) {
+    console.log(err.message);
+
     return res.json({ result: false, error: "Erreur interne du serveur." });
   }
 });
@@ -336,17 +338,17 @@ router.get("/:token", (req, res) => {
     }
   });
 });
-router.post("/:token", (req, res) => {
-  User.updateMany(
-    { Username: `${Username}` },
-    { email: `${email}`, dateDebutGrossesse: `${grossesse}` },
-    { dateDebutGrossesse: `${grossesse}` },
-    { derniereMenstruation: `${menstruation}` },
-    { password: `${password2}` }
-  ).then(() => {
-    User.find().then((data) => {
-      console.log(data);
-    });
-  });
-});
+// router.put("/:token", (req, res) => {
+//   User.updateMany(
+//     { Username: `${Username}` },
+//     { email: `${email}`, dateDebutGrossesse: `${grossesse}` },
+//     { dateDebutGrossesse: `${grossesse}` },
+//     { derniereMenstruation: `${menstruation}` },
+//     { password: `${password2}` }
+//   ).then(() => {
+//     User.find().then((data) => {
+//       console.log(data);
+//     });
+//   });
+// });
 module.exports = router;
