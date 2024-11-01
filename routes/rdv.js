@@ -5,6 +5,7 @@ const Rdv = require("../models/rdv");
 const Project = require("../models/project");
 const { checkBody } = require("../modules/checkBody");
 
+// rout to create date
 router.post("/:tokenProject", async (req, res) => {
   const { pourQui, practicien, lieu, notes, date, heure } = req.body;
 
@@ -33,22 +34,6 @@ router.post("/:tokenProject", async (req, res) => {
     const savedRdv = await newRdv.save();
     project.rdv.push(savedRdv._id);
     await project.save();
-    // const rdvInstant = await Rdv.findOne({ _id: savedRdv._id });
-    // console.log("BIYR", rdvInstant);
-    // const tempRdv = [...project.rdv, savedRdv._id];
-    // console.log(tempRdv);
-
-    // if (rdvInstant) {
-    //   const updatedProject = await Project.updateOne(
-    //     { token: req.params.tokenProject },
-    //     { rdv: tempRdv }
-    //   );
-    // }
-    // console.log("updated project :", updatedProject);
-
-    // save project maj
-    // await project.save();
-
     res.json({ message: "Rendez-vous ajouté avec succès", rendezvous: newRdv });
   } catch (error) {
     console.log(error);
@@ -57,6 +42,7 @@ router.post("/:tokenProject", async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 // futur route pour telecharger les données rdv dan les onglets agendas
 
 router.get("/:years/:month", (req, res) => {
@@ -71,4 +57,27 @@ router.get("/:years/:month", (req, res) => {
     }
   );
 });
+=======
+//route get pour rechercher un rendez-vous par practicien
+router.get("/:tokenProject", async (req, res) => {
+  try {
+    const project = await Project.findOne({ token: req.params.tokenProject });
+    console.log(project);
+    if (!project) {
+      return res.status(404).json({ message: "Projet non trouvé" });
+    }
+    const rdv = await Rdv.find({ rdv: project.rdv });
+    res.json({
+      result: true,
+      message: "Les rdv ont bien étaient chargés",
+      rdv: rdv,
+    });
+  } catch (error) {
+    console.log(error);
+    console.error("erreur lors de la récupération des données:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+>>>>>>> rdv
 module.exports = router;
