@@ -3,7 +3,7 @@ var router = express.Router();
 require("../models/connection");
 const Rdv = require("../models/rdv");
 const Project = require("../models/project");
-const { checkBody } = require("../modules/checkBody");
+const { checkBody } = require("../modules/checkbody");
 
 router.post("/:tokenProject", async (req, res) => {
   const { pourQui, practicien, lieu, notes, date, heure } = req.body;
