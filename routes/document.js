@@ -11,7 +11,7 @@ router.get("/ca_marcher", (req, res) => {
 });
 
 router.get("/:tokenProject", async (req, res) => {
-  console.log("dans GET /documents/");
+  console.log("dans GET /documents/:tokenProject");
 
   console.log(`req.params.tokenProject: ${req.params.tokenProject}`);
   // check fields
@@ -22,7 +22,7 @@ router.get("/:tokenProject", async (req, res) => {
     return res.json({ result: false, error: "Porject token rien trouve" });
   }
 
-  const documentsData = await Document.findMany({ project: projectData._id });
+  const documentsData = await Document.find({ project: projectData._id });
 
   return res.json({ result: true, documentsData });
 });
