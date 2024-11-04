@@ -9,6 +9,7 @@ var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/user");
 var rdvsRouter = require("./routes/rdv");
 var carnetbebeRouter = require("./routes/carnetbebe");
+var documentRouter = require("./routes/document");
 
 var app = express();
 const cors = require("cors"); // CORS INSTALL
@@ -23,5 +24,6 @@ app.use("/", indexRouter);
 app.use("/user", usersRouter);
 app.use("/rdv", rdvsRouter);
 app.use("/carnetbebe", carnetbebeRouter);
+app.use("/document", documentRouter);
 
 module.exports = app;
