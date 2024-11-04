@@ -3,32 +3,50 @@ var router = express.Router();
 const User = require("../models/user");
 const Project = require("../models/project");
 const Document = require("../models/document");
+const { checkBody } = require("../modules/checkbody");
 
 router.get("/ca_marcher", (req, res) => {
   console.log("dans GET /documents/ca_marcher");
   res.json({ result: true });
 });
 
+router.get("/:tokenProject", async (req, res) => {
+  console.log("dans GET /documents/");
+
+  console.log(`req.params.tokenProject: ${req.params.tokenProject}`);
+  // check fields
+
+  const projectData = await Project.findOne({ token: req.params.tokenProject });
+
+  if (!projectData) {
+    return res.json({ result: false, error: "Porject token rien trouve" });
+  }
+
+  const documentsData = await Document.findMany({ project: projectData._id });
+
+  return res.json({ result: true, documentsData });
+});
+
 router.post("/add", async (req, res) => {
   console.log("dans POST /documents/add");
 
-  console.log(`parametres reçu: `);
-  console.log(`token: ${req.body.token}`);
-  console.log(`nom: ${req.body.nom}`);
-  console.log(`practicien: ${req.body.practicien}`);
-  console.log(`notes: ${req.body.notes}`);
-  console.log(`photos: ${req.body.url}`);
+  // check fields
+  if (!checkBody(req.body, ["token", "tokenProject"])) {
+    return res.json({
+      result: false,
+      error: "Champs manquant ou mal renseigné",
+    });
+  }
+  const userData = await User.findOne({ token: req.body.token });
 
-  const userData = await User.findOne({ id: req.body.token });
-  // .then((userData) => {
-  //   console.log(`userData.username: ${userData.username}`);
-  // });
-  console.log(`userData.username: ${userData.username}`);
+  // This returns another user why ?????
+  // const userData = await User.findOne({ id: req.body.token });
 
-  const projectData = await Project.findOne({ id: req.body.tokenProject });
-  // Project.findOne({ id: req.body.tokenProject }).then((projectData) => {
-  // });
-  console.log(`projectData.token: ${projectData.token}`);
+  const projectData = await Project.findOne({ token: req.body.tokenProject });
+
+  if (!projectData) {
+    return res.json({ result: false, error: "project non trouvé" });
+  }
 
   const newDocument = new Document({
     url: req.body.url,
@@ -40,13 +58,8 @@ router.post("/add", async (req, res) => {
   });
 
   const savedDocument = await newDocument.save();
-  console.log("newDocument saved");
   projectData.document.push(savedDocument._id);
   await projectData.save();
-  // Project.findOne({ token: req.body.tokenProject }).then((projectData) => {
-  //   console.log("Found project");
-  //   projectData.document.push(savedDocument._id);
-  // });
 
   res.json({ result: true });
 });
