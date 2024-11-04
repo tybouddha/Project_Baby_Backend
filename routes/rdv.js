@@ -45,16 +45,22 @@ router.post("/:tokenProject", async (req, res) => {
 //route to get appointment
 router.get("/:tokenProject", async (req, res) => {
   try {
-    const project = await Project.findOne({ token: req.params.tokenProject });
-    console.log(project);
+    const project = await Project.findOne({
+      token: req.params.tokenProject,
+    }).populate("rdv");
+
+    console.log("projet token ?", project);
+
     if (!project) {
       return res.status(404).json({ message: "Projet non trouvé" });
     }
-    const rdv = await Rdv.find({ rdv: project.rdv });
+
+    // const rdv = await Rdv.find({ rdv: project.rdv });
+
     res.json({
       result: true,
-      message: "Les rdv ont bien étaient chargés",
-      rdv: rdv,
+      message: "Les rdv ont bien été chargés",
+      rdv: project.rdv,
     });
   } catch (error) {
     console.log(error);

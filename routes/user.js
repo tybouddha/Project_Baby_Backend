@@ -95,7 +95,7 @@ router.post("/signupProject", async (req, res) => {
 
 // Route to generate invit link
 router.post("/invite", async (req, res) => {
-  const { projectId, role } = req.body;
+  const { token, role } = req.body;
   const validRoles = ["lecteur", "editeur"];
 
   if (!validRoles.includes(role)) {
@@ -107,7 +107,7 @@ router.post("/invite", async (req, res) => {
 
   try {
     // check if project already exist
-    const project = await Project.findById(projectId);
+    const project = await Project.findOne({ token: req.body.token });
     if (!project) {
       return res.json({ result: false, error: "Projet introuvable." });
     }
