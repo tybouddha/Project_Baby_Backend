@@ -8,14 +8,21 @@ const User = require("../models/user");
 
 /* GET home page. */
 router.get("/:tokenProject", (req, res) => {
-  carnetBebe.find({}).then((carnetData) => {
-    if (!carnetData) {
-      return res.json({
-        result: false,
-        message: "pas d'information dans carnet bébé",
-      });
+  Project.findOne({ token: req.params.tokenProject }).then((projectdata) => {
+    console.log("test5", projectdata);
+    if (!projectdata) {
+      res.json({ result: false, error: "projectbaby inexistant" });
     } else {
-      res.json({ result: true, infos: carnetData });
+      carnetBebe.find({}).then((carnetData) => {
+        if (!carnetData) {
+          return res.json({
+            result: false,
+            message: "pas d'information dans carnet bébé",
+          });
+        } else {
+          res.json({ result: true, infos: carnetData });
+        }
+      });
     }
   });
 });

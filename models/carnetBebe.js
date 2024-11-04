@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const carnetBebeSchema = mongoose.Schema({
-  date: Date,
+  date: String,
   heureCoucher: String,
   repas: String,
   selle: String,
