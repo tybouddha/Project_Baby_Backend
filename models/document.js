@@ -1,16 +1,14 @@
 const mongoose = require("mongoose");
 
-
-
 const documentSchema = mongoose.Schema({
-    url: String,
-    nom: String,
-    practicien: String,
-    notes: String,
-    dateAjoute: Date,
-    project: { type: mongoose.Schema.Types.ObjectId, ref: 'projects' },
-})
+  url: String,
+  nom: String,
+  practicien: String,
+  notes: String,
+  dateAjoute: Date,
+  project: { type: mongoose.Schema.Types.ObjectId, ref: "projects" },
+});
 
-const Document = mongoose.model("documents", documentSchema)
+const Document = mongoose.model("documents", documentSchema);
 
-module.exports = Document
+module.exports = Document;
