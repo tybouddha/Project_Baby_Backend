@@ -123,14 +123,14 @@ router.delete("/:tokenProject/:id", async (req, res) => {
       return res.status(404).json({ message: "Rendez-vous non trouvé" });
     }
     // Supprime le rendez-vous du tableau rendez-vous
-    await Rdv.deleteOne({ id });
+    await Rdv.deleteOne({ _id: rdv._id });
     // Supprime le rendez-vous de la liste des rendez-vous du projet
     await Project.updateOne(
       { token: tokenProject },
       { $pull: { rdv: rdv._id } }
     );
 
-    res.json({ result: true, message: "Rendez-nous supprimé" });
+    res.json({ result: true, message: "Rendez-vous supprimé" });
   } catch (error) {
     console.log(error);
     console.error("Erreur lors de la suppression du rendez-vous");
