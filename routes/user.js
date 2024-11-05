@@ -236,6 +236,7 @@ router.post("/signup/:invitToken", async (req, res) => {
       role,
     });
   } catch (err) {
+    console.log(err);
     return res.json({ result: false, error: "Erreur interne du serveur." });
   }
 });
@@ -260,8 +261,13 @@ router.post("/signin", (req, res) => {
       }
       console.log(user._id);
       // find project in the Project Collection
-      Project.findOne({ proprietaire: user._id })
-        .populate("proprietaire") // to show owner
+      Project.findOne({
+        $or: [
+          { proprietaire: user._id },
+          { editeur: user._id },
+          { lecteur: user._id },
+        ],
+      })
         .then((project) => {
           console.log("test");
           console.log(project);
@@ -353,4 +359,65 @@ router.get("/:token", (req, res) => {
 //     });
 //   });
 // });
+
+//test route invité julien
+
+router.post("/invites/:tokenProject/:roles", async (req, res) => {
+  const roles = ["lecteur", "editeur"];
+  const bodyInfo = ["username", "password"];
+  if (!checkBody(req.body, bodyInfo)) {
+    return res.json({
+      result: false,
+      error: "Champs manquant ou mal renseigné",
+    });
+  }
+  const hash = await bcrypt.hash(req.body.password, 10);
+
+  try {
+    const newUser = await new User({
+      username: req.body.username,
+      password: hash,
+      token: uid2(32),
+    });
+    //save user invite
+    const saveInvite = await newUser.save();
+    const inviteId = newUser._id;
+
+    const project = await Project.findOne({ token: req.params.tokenProject });
+    if (!project) {
+      return res.json({
+        result: false,
+        error: "Projet non trouvé", // Si le projet n'existe pas
+      });
+    }
+
+    if (req.params.roles === "lecteur")
+      await Project.updateOne(
+        { token: req.params.tokenProject },
+        { $push: { lecteur: inviteId } }
+      );
+    else if (req.params.roles === "editeur")
+      await Project.updateOne(
+        { token: req.params.tokenProject },
+        { $push: { editeur: inviteId } }
+      );
+    const responseData = {
+      result: true,
+      project: project,
+      editeurLecteur: project.editeurLecteur,
+      lecteur: project.lecteur,
+    };
+    res.json({
+      result: true,
+      message: "compte invité crée",
+      responseData,
+    });
+  } catch (error) {
+    console.error(error);
+    res.json({
+      result: false,
+      error: `Erreur lors de la création de l'invité: ${error.message}`, // Detailed error message
+    });
+  }
+});
 module.exports = router;
