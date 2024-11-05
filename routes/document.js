@@ -37,6 +37,9 @@ router.post("/add", async (req, res) => {
       error: "Champs manquant ou mal renseigné",
     });
   }
+
+  console.log("-- succesfully passed check");
+
   const userData = await User.findOne({ token: req.body.token });
 
   // This returns another user why ?????
@@ -62,6 +65,32 @@ router.post("/add", async (req, res) => {
   await projectData.save();
 
   res.json({ result: true });
+});
+
+router.delete("/:documentId", async (req, res) => {
+  console.log("dans Delete /documents/:documentId");
+
+  const documentId = req.params.documentId;
+  const documentData = await Document.findOne({ _id: documentId });
+
+  if (!documentData) {
+    return res.json({ result: false, error: "Document non trouve" });
+  }
+  const projectData = await Project.findOne({ document: documentData._id });
+
+  console.log("------- projectData trouve ----------");
+
+  // étape 1: supprimer documentId de le project dans le collection project
+  projectData.document.pull(documentId);
+  await projectData.save();
+
+  // étape 2: supprimer document de collection document
+  await Document.deleteOne({ _id: documentId });
+  console.log("documentId supprimer: ", documentId);
+
+  console.log(projectData);
+
+  res.json({ result: true, documentId });
 });
 
 module.exports = router;

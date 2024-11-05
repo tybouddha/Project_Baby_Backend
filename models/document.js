@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const documentSchema = mongoose.Schema({
-  url: String,
+  url: [String],
   nom: String,
   practicien: String,
   notes: String,
