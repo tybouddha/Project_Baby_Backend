@@ -39,3 +39,17 @@ Ce projet utilise les technologies suivantes :
 - MongoDB et Mongoose : MongoDB est utilisé pour stocker les données, et Mongoose pour gérer les modèles et les opérations sur la base de données.
 - dotenv : Permet de gérer les variables d'environnement de manière sécurisée.
 - bcrypt : Utilisé pour hasher les mots de passe des utilisateurs et assurer une meilleure sécurité.
+
+## Cloudinary
+
+Installation
+
+- `yarn add cloudinary`
+- `yarn add express-fileupload`
+
+### dans app.js (necessaire pour Cloudinary)
+
+```js
+const fileUpload = require("express-fileupload");
+app.use(fileUpload());
+```
