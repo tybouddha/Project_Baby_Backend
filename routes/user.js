@@ -10,7 +10,6 @@ const Rdv = require("../models/rdv");
 const { checkBody } = require("../modules/checkbody");
 const uid2 = require("uid2");
 const bcrypt = require("bcrypt");
-const nodemailer = require("nodemailer");
 
 //Route signup without invit
 router.post("/signupProject", async (req, res) => {
@@ -189,17 +188,40 @@ router.delete("/delete", (req, res) => {
   });
 });
 
+// route to get user's data
 router.get("/:token", (req, res) => {
-  User.findOne({ token: req.params.token }).then((UserData) => {
-    if (!UserData) {
-      return res.json({ result: false, error: "Utilisateur non trouvé" });
-    } else {
-      res.json({ result: true, user: UserData });
-    }
-  });
+  Project.findOne({ token: req.params.token })
+    .then((projectData) => {
+      if (!projectData) {
+        return res.json({ result: false, error: "Projet non trouvé" });
+      } else {
+        User.findOne({ _id: projectData.proprietaire[0] })
+          .then((userData) => {
+            if (!userData) {
+              return res.json({
+                result: false,
+                error: "Utilisateur non trouvé",
+              });
+            }
+            res.json({ result: true, user: userData });
+          })
+          .catch((error) => {
+            res.json({
+              result: false,
+              error: "Erreur lors de la recherche de l'utilisateur",
+            });
+          });
+      }
+    })
+    .catch((error) => {
+      res.json({
+        result: false,
+        error: "Erreur lors de la recherche du projet",
+      });
+    });
 });
 
-//route invité julien
+//route invit
 router.post("/invites/:tokenProject/:roles", async (req, res) => {
   const roles = ["lecteur", "editeur"];
   const bodyInfo = ["username", "password"];
@@ -256,6 +278,113 @@ router.post("/invites/:tokenProject/:roles", async (req, res) => {
       result: false,
       error: `Erreur lors de la création de l'invité: ${error.message}`, // Detailed error message
     });
+  }
+});
+
+//route put to update an user
+router.put("/:tokenProject/:tokenUser", async (req, res) => {
+  // console.log("in the route");
+
+  const { username, email, derniereMenstruation, dateDebutGrossesse } =
+    req.body;
+  console.log({ username, email, derniereMenstruation, dateDebutGrossesse });
+
+  if (!checkBody(req.body, ["username", "email"])) {
+    // console.log("missing field");
+
+    return res.json({ result: false, error: "Missing or empty fields" });
+  }
+
+  try {
+    // console.log("in the try part");
+
+    const { tokenProject, tokenUser } = req.params; // Récupération du token et de l'ID du propirétaire
+    const project = await Project.findOne({ token: tokenProject });
+
+    if (!project) {
+      return res.status(404).json({ message: "Projet non trouvé" });
+    }
+    // console.log("id in back", id);
+
+    // Vérifie si l'utilisateur existe
+    const user = await User.findOne({ token: tokenUser });
+    // console.log("user:", user);
+
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+    // console.log(`_id: ${user._id}`);
+    await User.findByIdAndUpdate(
+      user._id,
+      // Met à jour le propriétaire à jour
+
+      {
+        username: username,
+        email: email,
+        derniereMenstruation: derniereMenstruation,
+        dateDebutGrossesse: dateDebutGrossesse,
+      }
+    );
+
+    res.json({
+      result: true,
+      message: "Utilisateur modifié avec succès",
+      proprietaire: user,
+    });
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour de l'utilisateur :", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+//route put to update password
+router.put("/password/:tokenProject/:tokenUser", async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  console.log("missing field");
+
+  if (!checkBody(req.body, ["oldPassword", "newPassword"])) {
+    // console.log("missing field");
+
+    return res.json({ result: false, error: "Missing or empty fields" });
+  }
+
+  try {
+    const { tokenProject, tokenUser } = req.params;
+    const project = await Project.findOne({ token: tokenProject });
+    if (!project) {
+      return res.status(404).json({ message: "Projet non trouvé" });
+    }
+    // console.log("id in back", id);
+
+    const user = await User.findOne({ token: tokenUser });
+    console.log("user:", user);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ result: false, error: "Utilisateur non trouvé" });
+    }
+
+    // Vérifier si l'ancien mot de passe est correct
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res
+        .status(400)
+        .json({ result: false, error: "Ancien mot de passe incorrect" });
+    }
+
+    // Hacher le nouveau mot de passe
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Mettre à jour le mot de passe de l'utilisateur
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ result: true, message: "Mot de passe mis à jour avec succès" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ result: false, error: "Erreur serveur:" + error.message });
   }
 });
 
