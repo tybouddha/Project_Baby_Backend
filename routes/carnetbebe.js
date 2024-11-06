@@ -72,13 +72,37 @@ router.post("/ajout/:tokenProject", async (req, res) => {
     res.status(500).json({ message: "Erreur serveur" });
   }
 });
+router.delete("/:tokenProject/:id", async (req, res) => {
+  try {
+    const { tokenProject, id } = req.params; // Récupération du token et de l'ID du rendez-vous
+    const project = await Project.findOne({ token: tokenProject });
+    // console.log(project);
+    if (!project) {
+      return res.status(404).json({ message: "Projet non trouvé" });
+    }
+    // Vérifie si le rendez-vous existe
+    const docBebe = await carnetBebe.findById(id);
+    // console.log(rdv);
+    if (!docBebe) {
+      return res.status(404).json({ message: "Rendez-vous non trouvé" });
+    }
+    // Supprime le rendez-vous du tableau rendez-vous
+    await carnetBebe.deleteOne({ _id: docBebe._id });
+    // Supprime le rendez-vous de la liste des rendez-vous du projet
+    await Project.updateOne(
+      { token: tokenProject },
+      { $pull: { docBebe: docBebe._id } }
+    );
 
-//   res.json({ result: "oui 🚀" });
-
-//   if(role=== 'lecteur'){
-//     return res.json({ result: false, error:"Vous ne n'avez pas le bon rôle"})
-//   }
-
-// });
+    res.json({ result: true, message: "Document carnetBebe supprimé" });
+  } catch (error) {
+    // console.log(error);
+    console.error(
+      "Erreur lors de la suppression du document carnetBebe",
+      error
+    );
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
 
 module.exports = router;
