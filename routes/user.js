@@ -93,154 +93,6 @@ router.post("/signupProject", async (req, res) => {
   }
 });
 
-// Route to generate invit link
-router.post("/invite", async (req, res) => {
-  const { token, role } = req.body;
-  const validRoles = ["lecteur", "editeur"];
-
-  if (!validRoles.includes(role)) {
-    return res.json({
-      result: false,
-      error: "Le rôle doit être 'lecteur' ou 'editeur'.",
-    });
-  }
-
-  try {
-    // check if project already exist
-    const project = await Project.findOne({ token: req.body.token });
-    if (!project) {
-      return res.json({ result: false, error: "Projet introuvable." });
-    }
-
-    // generate invit token
-    const inviteToken = uid2(32);
-
-    // add token and role to project
-    //project.invitations.push({ token: inviteToken, role });
-    //await project.save();
-
-    const inviteLink = `${process.env.FRONTEND_URL}/signup/${inviteToken}`;
-    console.log(inviteLink);
-
-    // config nodemailer to send email
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
-
-    // email option
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: req.body.email,
-      subject: "Invitation au Projet Baby ",
-      text: `Vous avez été invité à rejoindre le Projet Baby en tant que ${role}. Cliquez sur le lien suivant pour vous inscrire : ${inviteLink}`,
-    };
-
-    // email send
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        return res.json({
-          result: false,
-          error: "Erreur lors de l'envoi de l'email d'invitation.",
-        });
-      } else {
-        return res.json({ result: true, inviteLink, role });
-      }
-    });
-  } catch (err) {
-    return res.json({ result: false, error: "Erreur interne du serveur." });
-  }
-});
-
-//route signup with invit
-router.post("/signup/:invitToken", async (req, res) => {
-  const { invitToken } = req.params;
-  const bodyFields = ["username", "password"];
-
-  try {
-    // find project with the invit token
-    const project = await Project.findOne({ "invitations.token": invitToken });
-    if (!project) {
-      return res.json({
-        result: false,
-        error: "Invitation invalide ou expirée.",
-      });
-    }
-
-    // Retrieving the role associated with the token
-    const invitation = project.invitations.find(
-      (inv) => inv.token === invitToken
-    );
-    if (!invitation) {
-      return res.json({
-        result: false,
-        error: "Le rôle associé à l'invitation est introuvable.",
-      });
-    }
-    const role = invitation.role;
-
-    // check if empty or misinformed fields
-    if (!checkBody(req.body, bodyFields)) {
-      return res.json({
-        result: false,
-        error: "Champs manquant ou mal renseigné",
-      });
-    }
-
-    // check if user already exist
-    const existingUser = await User.findOne({ username: req.body.username });
-    if (existingUser) {
-      return res.json({ result: false, error: "Utilisateur existe déjà!" });
-    }
-
-    // create new user
-    const hash = bcrypt.hashSync(req.body.password, 10);
-    const newUser = new User({
-      username: req.body.username,
-      password: hash,
-      token: uid2(32),
-    });
-    const savedUser = await newUser.save();
-
-    // add user in project property in function of role
-    if (role === "lecteur") {
-      if (!project.lecteurs.includes(savedUser._id)) {
-        project.lecteurs.push(savedUser._id);
-      } else {
-        return res.json({
-          result: false,
-          error: "Cet utilisateur est déjà lecteur du projet.",
-        });
-      }
-    } else if (role === "editeur") {
-      if (!project.editeurs.includes(savedUser._id)) {
-        project.editeurs.push(savedUser._id);
-      } else {
-        return res.json({
-          result: false,
-          error: "Cet utilisateur est déjà éditeur du projet.",
-        });
-      }
-    }
-
-    // save project change
-    await project.save();
-
-    return res.json({
-      result: true,
-      message: "Inscription réussie.",
-      token: savedUser.token,
-      role,
-    });
-  } catch (err) {
-    console.log(err);
-    return res.json({ result: false, error: "Erreur interne du serveur." });
-  }
-});
-
 //route signIn to log in ,retake all project 's data
 router.post("/signin", (req, res) => {
   // check require fields
@@ -346,22 +198,8 @@ router.get("/:token", (req, res) => {
     }
   });
 });
-// router.put("/:token", (req, res) => {
-//   User.updateMany(
-//     { Username: `${Username}` },
-//     { email: `${email}`, dateDebutGrossesse: `${grossesse}` },
-//     { dateDebutGrossesse: `${grossesse}` },
-//     { derniereMenstruation: `${menstruation}` },
-//     { password: `${password2}` }
-//   ).then(() => {
-//     User.find().then((data) => {
-//       console.log(data);
-//     });
-//   });
-// });
 
-//test route invité julien
-
+//route invité julien
 router.post("/invites/:tokenProject/:roles", async (req, res) => {
   const roles = ["lecteur", "editeur"];
   const bodyInfo = ["username", "password"];
@@ -380,7 +218,7 @@ router.post("/invites/:tokenProject/:roles", async (req, res) => {
       token: uid2(32),
     });
     //save user invite
-    const saveInvite = await newUser.save();
+    await newUser.save();
     const inviteId = newUser._id;
 
     const project = await Project.findOne({ token: req.params.tokenProject });
@@ -420,4 +258,5 @@ router.post("/invites/:tokenProject/:roles", async (req, res) => {
     });
   }
 });
+
 module.exports = router;
