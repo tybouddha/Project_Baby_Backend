@@ -85,6 +85,7 @@ router.post("/signupProject", async (req, res) => {
       username: savedUser.username,
       prenom: savedUser.prenom,
       email: savedUser.email,
+      role: "propriétaire",
     });
   } catch (err) {
     console.log(err.message);
@@ -229,27 +230,42 @@ router.post("/invites/:tokenProject/:roles", async (req, res) => {
       });
     }
 
-    if (req.params.roles === "lecteur")
+    if (req.params.roles === "lecteur") {
       await Project.updateOne(
         { token: req.params.tokenProject },
         { $push: { lecteur: inviteId } }
       );
-    else if (req.params.roles === "editeur")
+      const data = {
+        tokenProject: project.token,
+        tokenUser: saveInvite.token,
+        role: "lecteur",
+      };
+      res.json({
+        result: true,
+        message: "compte invite lecteur crée",
+        data: data,
+      });
+    } else if (req.params.roles === "editeur") {
       await Project.updateOne(
         { token: req.params.tokenProject },
         { $push: { editeur: inviteId } }
       );
-    const responseData = {
-      result: true,
-      project: project,
-      editeurLecteur: project.editeurLecteur,
-      lecteur: project.lecteur,
-    };
-    res.json({
-      result: true,
-      message: "compte invité crée",
-      responseData,
-    });
+      const data2 = {
+        tokenProject: project.token,
+        TokenUser: saveInvite.token,
+        role: "editeur",
+      };
+      // const responseData = {
+      //   project: project,
+      //   project: project.editeurLecteur,
+      //   lecteur: project.lecteur,
+      // };
+      res.json({
+        result: true,
+        message: "compte invité editeur crée",
+        data: data2,
+      });
+    }
   } catch (error) {
     console.error(error);
     res.json({

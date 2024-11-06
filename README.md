@@ -47,6 +47,10 @@ Installation
 - `yarn add cloudinary`
 - `yarn add express-fileupload`
 
+### .env (necessaire pour Cloudinary)
+
+`CLOUDINARY_URL=cloudinary://....`
+
 ### dans app.js (necessaire pour Cloudinary)
 
 ```js
