@@ -93,6 +93,7 @@ router.post("/signupProject", async (req, res) => {
 
 //route signIn to log in ,retake all project 's data
 router.post("/signin", async (req, res) => {
+  console.log(`user: ${req.body.username}`);
   // check require fields
   if (!checkBody(req.body, ["username", "password"])) {
     return res.json({ result: false, error: "Missing or empty fields" });
@@ -116,9 +117,9 @@ router.post("/signin", async (req, res) => {
 
   const projectLecteur = await Project.findOne({ lecteur: user._id });
 
-  // console.log(projectProprietaire);
+  console.log(projectProprietaire);
   console.log(projectEditeur);
-  // console.log(projectLecteur);
+  console.log(projectLecteur);
 
   let role = "";
   if (projectProprietaire) {
@@ -142,7 +143,7 @@ router.post("/signin", async (req, res) => {
   return Promise.all([
     CarnetBebe.findOne({
       carnetBebe: responseData.project.carnetBebe,
-    }).populate("responseData."),
+    }).populate("project"),
     Rdv.findOne({ rdv: responseData.project.rdv }).populate("project"),
     Document.findOne({ document: responseData.project.document }).populate(
       "project"
