@@ -1,277 +1,396 @@
-var express = require('express');
+var express = require("express");
 var router = express.Router();
-require('../models/connection');
-const User = require('../models/user');
-const Project = require('../models/project')
-const Document = require('../models/document');
-const CarnetBebe = require('../models/carnetBebe');
-const Enfant = require('../models/enfant');
-const Rdv = require('../models/rdv');
-const { checkBody } = require('../modules/checkBody');
-const uid2 = require('uid2');
-const bcrypt = require('bcrypt');
-const nodemailer = require('nodemailer');
+require("../models/connection");
+const User = require("../models/user");
+const Project = require("../models/project");
+const Document = require("../models/document");
+const CarnetBebe = require("../models/carnetBebe");
+const Rdv = require("../models/rdv");
+const { checkBody } = require("../modules/checkbody");
+const uid2 = require("uid2");
+const bcrypt = require("bcrypt");
 
 //Route signup without invit
-router.post('/signupProject', async (req, res) => {
-    const bodyFields = ['prenom', 'nomDeFamille', 'email', 'username', 'password'];
-    
-    // check fields
-    if (!checkBody(req.body, bodyFields)) {
-        return res.json({ result: false, error: 'Champs manquant ou mal renseigné' });
-    }
-    //regex to check email format
-    const emailRegExp = 
-/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; 
-    if (!emailRegExp.test(req.body.email)) {
-        return res.json({ result: false, error: "Format d'email invalide." });
-    }
-    try {
-        //check if user already exist
-        const existingUser = await User.findOne({ username: req.body.username });
-        if (existingUser) {
-            return res.json({ result: false, error: 'Utilisateur existe déjà!' });
-        }
-        const dateDebutGrossesse = req.body.dateDebutGrossesse;
-        const derniereMenstruation = req.body.derniereMenstruation;
-        const hash = bcrypt.hashSync(req.body.password, 10);
-        
-        //create new user
-        const newUser = new User({
-            prenom: req.body.prenom,
-            nomDeFamille: req.body.nomDeFamille,
-            username: req.body.username,
-            derniereMenstruation,
-            dateDebutGrossesse,
-            password: hash,
-            email: req.body.email,
-            token: uid2(32)
-        });
-        //save user
-        const savedUser = await newUser.save();
-        //create new project
-        const newProject = new Project({
-            proprietaire: savedUser._id,
-            token: uid2(32),
-            carnetBebe: req.body.carnetBebe || null,
-            rdv: req.body.rdv || null,
-            document: req.body.document || null,
-            enfant: req.body.enfant || null
-        });
-        //save project
-        const savedProject = await newProject.save();
+router.post("/signupProject", async (req, res) => {
+  console.log("- dans POST /signupProject 📌");
+  const bodyFields = [
+    "prenom",
+    "nomDeFamille",
+    "email",
+    "username",
+    "password",
+  ];
 
-        return res.json({ result: true, message: 'Projet créé avec succès.', project: savedProject, token: savedUser.token });
-    } catch (err) {
-        return res.json({ result: false, error: 'Erreur interne du serveur.' });
+  // check fields
+  if (!checkBody(req.body, bodyFields)) {
+    return res.json({
+      result: false,
+      error: "Champs manquant ou mal renseigné",
+    });
+  }
+  //regex to check email format
+  const emailRegExp =
+    /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  if (!emailRegExp.test(req.body.email)) {
+    return res.json({ result: false, error: "Format d'email invalide." });
+  }
+  try {
+    //check if user already exist
+    const existingUser = await User.findOne({ username: req.body.username });
+    if (existingUser) {
+      return res.json({ result: false, error: "Utilisateur existe déjà!" });
     }
+    const dateDebutGrossesse = req.body.dateDebutGrossesse;
+    const derniereMenstruation = req.body.derniereMenstruation;
+    const hash = bcrypt.hashSync(req.body.password, 10);
+
+    //create new user
+    const newUser = new User({
+      prenom: req.body.prenom,
+      nomDeFamille: req.body.nomDeFamille,
+      username: req.body.username,
+      derniereMenstruation,
+      dateDebutGrossesse,
+      password: hash,
+      email: req.body.email,
+      token: uid2(32),
+    });
+    //save user
+    const savedUser = await newUser.save();
+    //create new project
+    const newProject = new Project({
+      proprietaire: savedUser._id,
+      token: uid2(32),
+      carnetBebe: req.body.carnetBebe || [],
+      rdv: req.body.rdv || [],
+      document: req.body.document || [],
+    });
+    //save project
+    const savedProject = await newProject.save();
+
+    // Réponse attendue par Redux:
+    // {user_token, project.id,username,prenom, documentsArr, carnetBebeArr, rdvArr}
+
+    return res.json({
+      result: true,
+      message: "Projet créé avec succès.",
+      project: savedProject,
+      token: savedUser.token,
+      rdvArr: [],
+      documentArr: [],
+      carnetBebArr: [],
+      username: savedUser.username,
+      prenom: savedUser.prenom,
+      email: savedUser.email,
+      role: "propriétaire",
+    });
+  } catch (err) {
+    console.log(err.message);
+
+    return res.json({ result: false, error: "Erreur interne du serveur." });
+  }
 });
 
-// Route to generate invit link
-router.post('/invite', async (req, res) => {
-    const { projectId, role } = req.body;
-    const validRoles = ['lecteur', 'editeur'];
+//route signIn to log in ,retake all project 's data
+router.post("/signin", async (req, res) => {
+  // check require fields
+  if (!checkBody(req.body, ["username", "password"])) {
+    return res.json({ result: false, error: "Missing or empty fields" });
+  }
 
-    if (!validRoles.includes(role)) {
-        return res.json({ result: false, error: "Le rôle doit être 'lecteur' ou 'editeur'." });
-    }
+  // find user with the username in User collection
+  const user = await User.findOne({ username: req.body.username });
+  if (!user) {
+    return res.json({ result: false, error: "Utilisateur non trouvé" });
+  }
 
-    try {
-        // check if project already exist
-        const project = await Project.findById(projectId);
-        if (!project) {
-            return res.json({ result: false, error: 'Projet introuvable.' });
-        }
+  // check password
+  if (!bcrypt.compareSync(req.body.password, user.password)) {
+    return res.json({ result: false, error: "Mot de passe erroné" });
+  }
+  console.log(user._id);
+  // find project in the Project Collection
+  const projectProprietaire = await Project.findOne({ proprietaire: user._id });
 
-        // generate invit token
-        const inviteToken = uid2(32);
+  const projectEditeur = await Project.findOne({ editeur: user._id });
 
-        // add token and role to project
-        //project.invitations.push({ token: inviteToken, role });
-        //await project.save();
+  const projectLecteur = await Project.findOne({ lecteur: user._id });
 
-        const inviteLink = `${process.env.FRONTEND_URL}/signup/${inviteToken}`;
-        console.log(inviteLink)
+  // console.log(projectProprietaire);
+  console.log(projectEditeur);
+  // console.log(projectLecteur);
 
-        // config nodemailer to send email
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASSWORD
-            }
-        });
+  let role = "";
+  if (projectProprietaire) {
+    role = "propriétaire";
+  } else if (projectEditeur) {
+    role = "editeur";
+  } else if (projectLecteur) {
+    role = "lecteur";
+  } else {
+    // Si aucun projet n'est trouvé, on retourne un message d'erreur
+    return res.json({ result: false, error: "Aucun projet trouvé" });
+  }
 
-        // email option
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: req.body.email,
-            subject: 'Invitation au Projet Baby ',
-            text: `Vous avez été invité à rejoindre le Projet Baby en tant que ${role}. Cliquez sur le lien suivant pour vous inscrire : ${inviteLink}`
-        };
+  const responseData = {
+    result: true,
+    project: projectProprietaire || projectEditeur || projectLecteur,
+    role: role,
+  };
 
-        // email send
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                return res.json({ result: false, error: "Erreur lors de l'envoi de l'email d'invitation." });
-            } else {
-                return res.json({ result: true, inviteLink, role });
-            }
-        });
-    } catch (err) {
-        return res.json({ result: false, error: 'Erreur interne du serveur.' });
-    }
+  // find all information of the project in differents collections
+  return Promise.all([
+    CarnetBebe.findOne({
+      carnetBebe: responseData.project.carnetBebe,
+    }).populate("responseData."),
+    Rdv.findOne({ rdv: responseData.project.rdv }).populate("project"),
+    Document.findOne({ document: responseData.project.document }).populate(
+      "project"
+    ),
+  ])
+    .then(([carnetBebeData, rdvData, documentData]) => {
+      responseData.carnetBebeArr = carnetBebeData
+        ? carnetBebeData.carnetBebe
+        : [];
+      responseData.rdvArr = rdvData ? rdvData.rdv : [];
+      responseData.documentArr = documentData ? documentData.document : [];
+      responseData.project = responseData.project;
+      responseData.token = user.token;
+      responseData.username = user.username;
+      console.log("route result", responseData);
+      res.json({ result: true, response: responseData });
+    })
+
+    .catch((error) => {
+      console.error(error);
+      res.json({
+        result: false,
+        error: "Erreur lors de la recherche du projet",
+      });
+    })
+
+    .catch((error) => {
+      console.error(error);
+      res.json({
+        result: false,
+        error: "Erreur lors de la recherche de l'utilisateur",
+      });
+    });
 });
-
-//route signup with invit
-router.post('/signup/:invitToken', async (req, res) => {
-    const { invitToken } = req.params;
-    const bodyFields = ['username', 'password'];
-
-    try {
-        // find project with the invit token
-        const project = await Project.findOne({ "invitations.token": invitToken });
-        if (!project) {
-            return res.json({ result: false, error: 'Invitation invalide ou expirée.' });
-        }
-
-        // Retrieving the role associated with the token
-        const invitation = project.invitations.find(inv => inv.token === invitToken);
-        if (!invitation) {
-            return res.json({ result: false, error: "Le rôle associé à l'invitation est introuvable." });
-        }
-        const role = invitation.role;
-
-        // check if empty or misinformed fields
-        if (!checkBody(req.body, bodyFields)) {
-            return res.json({ result: false, error: 'Champs manquant ou mal renseigné' });
-        }
-
-        // check if user already exist
-        const existingUser = await User.findOne({ username: req.body.username });
-        if (existingUser) {
-            return res.json({ result: false, error: 'Utilisateur existe déjà!' });
-        }
-
-        // create new user
-        const hash = bcrypt.hashSync(req.body.password, 10);
-        const newUser = new User({
-            username: req.body.username,
-            password: hash,
-            token: uid2(32)
-        });
-        const savedUser = await newUser.save();
-
-        // add user in project property in function of role
-        if (role === 'lecteur') {
-            if (!project.lecteurs.includes(savedUser._id)) {
-                project.lecteurs.push(savedUser._id);
-            } else {
-                return res.json({ result: false, error: "Cet utilisateur est déjà lecteur du projet." });
-            }
-        } else if (role === 'editeur') {
-            if (!project.editeurs.includes(savedUser._id)) {
-                project.editeurs.push(savedUser._id);
-            } else {
-                return res.json({ result: false, error: "Cet utilisateur est déjà éditeur du projet." });
-            }
-        }
-
-        // save project change
-        await project.save();
-
-        return res.json({ result: true, message: 'Inscription réussie.', token: savedUser.token, role });
-    } catch (err) {
-        return res.json({ result: false, error: 'Erreur interne du serveur.' });
-    }
-});
-
-
-
-//route signIn to log in ,retake all project 's data 
-router.post('/signin', (req, res) => {
-    // check require fields
-    if (!checkBody(req.body, ['username', 'password'])) {
-        return res.json({ result: false, error: 'Missing or empty fields' });
-    }
-
-    // find user with the username in User collection
-    User.findOne({ username: req.body.username })
-        .then(user => {
-            if (!user) {
-                return res.json({ result: false, error: 'Utilisateur non trouvé' });
-            }
-
-            // check password
-            if (!bcrypt.compareSync(req.body.password, user.password)) {
-                return res.json({ result: false, error: 'Mot de passe erroné' });
-            }
-
-            // find project in the Project Collection
-            Project.findOne({ proprietaire: user._id })
-                .populate('proprietaire') // to show owner
-                .then(project => {
-                    if (!project) {
-                        return res.json({ result: false, error: 'Aucun projet trouvé' });
-                    }
-
-                    const responseData = {
-                        result: true,
-                        data: project,
-                        editeurLecteur: project.editeurLecteur,
-                        lecteur: project.lecteur,
-                    };
-
-                    // find all information of the project in differents collections
-                    return Promise.all([
-                        CarnetBebe.findOne({ carnetBebe: project.carnetBebe }).populate('carnetBebe'),
-                        Rdv.findOne({ rdv: project.rdv }).populate('rdv'),
-                        Document.findOne({ document: project.document }).populate('document'),
-                        Enfant.findOne({ document: project.enfant }).populate('enfant')
-                    ])
-                    .then(([carnetBebeData, rdvData, documentData, enfantData]) => {
-                        responseData.carnetBebeArr = carnetBebeData ? carnetBebeData.carnetBebe : [];
-                        responseData.rdvArr = rdvData ? rdvData.rdv : [];
-                        responseData.documentArr = documentData ? documentData.document : [];
-                        responseData.enfantArr = enfantData ? enfantData.enfant : [];
-
-                        res.json(responseData);
-                    });
-                })
-                .catch(error => {
-                    console.error(error);
-                    res.json({ result: false, error: 'Erreur lors de la recherche du projet' });
-                });
-        })
-        .catch(error => {
-            console.error(error);
-            res.json({ result: false, error: 'Erreur lors de la recherche de l\'utilisateur' });
-        });
-});
-
-
 
 //route to delete an user (not owner of project)
 router.delete("/delete", (req, res) => {
+  User.findOne({ username: req.body.username }).then((userFound) => {
+    if (userFound) {
+      User.deleteOne({ username: req.body.username }).then((userDeleted) => {
+        return res.json({ result: true });
+      });
+    } else {
+      return res.json({ result: false, error: "Utilisateur non trouvé" });
+    }
+  });
+});
 
-    User.findOne({ username: req.body.username }).then((userFound) => {
-        if (userFound) {
-            User.deleteOne({ username: req.body.username }).then((userDeleted) => {
-                return res.json({ result: true })
-            })
-        } else {
-            return res.json({ result: false, error: "Utilisateur non trouvé" })
-        }
+// route to get user's data
+router.get("/:token", (req, res) => {
+  Project.findOne({ token: req.params.token })
+    .then((projectData) => {
+      if (!projectData) {
+        return res.json({ result: false, error: "Projet non trouvé" });
+      } else {
+        User.findOne({ _id: projectData.proprietaire[0] })
+          .then((userData) => {
+            if (!userData) {
+              return res.json({
+                result: false,
+                error: "Utilisateur non trouvé",
+              });
+            }
+            res.json({ result: true, user: userData });
+          })
+          .catch((error) => {
+            res.json({
+              result: false,
+              error: "Erreur lors de la recherche de l'utilisateur",
+            });
+          });
+      }
     })
-})
+    .catch((error) => {
+      res.json({
+        result: false,
+        error: "Erreur lors de la recherche du projet",
+      });
+    });
+});
 
+//route invit
+router.post("/invites/:tokenProject/:roles", async (req, res) => {
+  const roles = ["lecteur", "editeur"];
+  const bodyInfo = ["username", "password"];
+  if (!checkBody(req.body, bodyInfo)) {
+    return res.json({
+      result: false,
+      error: "Champs manquant ou mal renseigné",
+    });
+  }
+  const hash = await bcrypt.hash(req.body.password, 10);
 
+  try {
+    const newUser = await new User({
+      username: req.body.username,
+      password: hash,
+      token: uid2(32),
+    });
+    //save user invite
+    await newUser.save();
+    const inviteId = newUser._id;
+
+    const project = await Project.findOne({ token: req.params.tokenProject });
+    if (!project) {
+      return res.json({
+        result: false,
+        error: "Projet non trouvé", // Si le projet n'existe pas
+      });
+    }
+
+    if (req.params.roles === "lecteur") {
+      await Project.updateOne(
+        { token: req.params.tokenProject },
+        { $push: { lecteur: inviteId } }
+      );
+      const data = {
+        tokenProject: project.token,
+        tokenUser: newUser.token,
+        role: "lecteur",
+      };
+      res.json({
+        result: true,
+        message: "compte invite lecteur crée",
+        data: data,
+      });
+    } else if (req.params.roles === "editeur") {
+      await Project.updateOne(
+        { token: req.params.tokenProject },
+        { $push: { editeur: inviteId } }
+      );
+      const data2 = {
+        tokenProject: project.token,
+        TokenUser: newUser.token,
+        role: "editeur",
+      };
+      res.json({
+        result: true,
+        message: "compte invité editeur crée",
+        data: data2,
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.json({
+      result: false,
+      error: `Erreur lors de la création de l'invité: ${error.message}`, // Detailed error message
+    });
+  }
+});
+
+//route put to update an user
+router.put("/:tokenProject/:tokenUser", async (req, res) => {
+  // console.log("in the route");
+
+  const { username, email, derniereMenstruation, dateDebutGrossesse } =
+    req.body;
+  // console.log({ username, email, derniereMenstruation, dateDebutGrossesse });
+
+  if (!checkBody(req.body, ["username", "email"])) {
+    return res.json({ result: false, error: "Missing or empty fields" });
+  }
+
+  try {
+    const { tokenProject, tokenUser } = req.params; // Récupération du token et de l'ID du propirétaire
+    const project = await Project.findOne({ token: tokenProject });
+
+    if (!project) {
+      return res.status(404).json({ message: "Projet non trouvé" });
+    }
+
+    // Vérifie si l'utilisateur existe
+    const user = await User.findOne({ token: tokenUser });
+
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+
+    await User.findByIdAndUpdate(
+      user._id,
+      // Met à jour le propriétaire à jour
+
+      {
+        username: username,
+        email: email,
+        derniereMenstruation: derniereMenstruation,
+        dateDebutGrossesse: dateDebutGrossesse,
+      }
+    );
+
+    res.json({
+      result: true,
+      message: "Utilisateur modifié avec succès",
+      proprietaire: user,
+    });
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour de l'utilisateur :", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+//route put to update password
+router.put("/password/:tokenProject/:tokenUser", async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  if (!checkBody(req.body, ["oldPassword", "newPassword"])) {
+    // console.log("missing field");
+
+    return res.json({ result: false, error: "Missing or empty fields" });
+  }
+
+  try {
+    const { tokenProject, tokenUser } = req.params;
+    const project = await Project.findOne({ token: tokenProject });
+    if (!project) {
+      return res.status(404).json({ message: "Projet non trouvé" });
+    }
+
+    const user = await User.findOne({ token: tokenUser });
+    // console.log("user:", user);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ result: false, error: "Utilisateur non trouvé" });
+    }
+
+    // Vérifier si l'ancien mot de passe est correct
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res
+        .status(400)
+        .json({ result: false, error: "Ancien mot de passe incorrect" });
+    }
+
+    // Hacher le nouveau mot de passe
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Mettre à jour le mot de passe de l'utilisateur
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ result: true, message: "Mot de passe mis à jour avec succès" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ result: false, error: "Erreur serveur:" + error.message });
+  }
+});
 
 module.exports = router;
-
-
-
-
-
-
-

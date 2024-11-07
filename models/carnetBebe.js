@@ -1,19 +1,17 @@
 const mongoose = require("mongoose");
 
-
-
 const carnetBebeSchema = mongoose.Schema({
-    date: Date,
-    heureDodo: Date,
-    quantiteMiam: String,
-    selle: String,
-    couleurSelle: String,
-    poids: Number,
-    taille: Number, //cm
-    notes: String,
-    project: { type: mongoose.Schema.Types.ObjectId, ref: 'projects' },
-})
+  date: String,
+  heureCoucher: String,
+  repas: String,
+  selle: String,
+  couleurSelle: String,
+  poids: Number,
+  taille: Number, //cm
+  notes: String,
+  project: { type: mongoose.Schema.Types.ObjectId, ref: "projects" },
+});
 
-const CarnetBebe = mongoose.model("carnetBebes", carnetBebeSchema)
+const CarnetBebe = mongoose.model("carnetBebes", carnetBebeSchema);
 
-module.exports = CarnetBebe
+module.exports = CarnetBebe;
