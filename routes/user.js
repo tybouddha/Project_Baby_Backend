@@ -94,79 +94,87 @@ router.post("/signupProject", async (req, res) => {
 });
 
 //route signIn to log in ,retake all project 's data
-router.post("/signin", (req, res) => {
+router.post("/signin", async (req, res) => {
   // check require fields
   if (!checkBody(req.body, ["username", "password"])) {
     return res.json({ result: false, error: "Missing or empty fields" });
   }
 
   // find user with the username in User collection
-  User.findOne({ username: req.body.username })
-    .then((user) => {
-      if (!user) {
-        return res.json({ result: false, error: "Utilisateur non trouvé" });
-      }
+  const user = await User.findOne({ username: req.body.username });
+  if (!user) {
+    return res.json({ result: false, error: "Utilisateur non trouvé" });
+  }
 
-      // check password
-      if (!bcrypt.compareSync(req.body.password, user.password)) {
-        return res.json({ result: false, error: "Mot de passe erroné" });
-      }
-      // console.log(user._id);
-      // find project in the Project Collection
-      Project.findOne({
-        $or: [
-          { proprietaire: user._id },
-          { editeur: user._id },
-          { lecteur: user._id },
-        ],
-      })
-        .then((project) => {
-          // console.log("test");
-          // console.log(project);
-          if (!project) {
-            return res.json({ result: false, error: "Aucun projet trouvé" });
-          }
+  // check password
+  if (!bcrypt.compareSync(req.body.password, user.password)) {
+    return res.json({ result: false, error: "Mot de passe erroné" });
+  }
+  console.log(user._id);
+  // find project in the Project Collection
+  const projectProprietaire = await Project.findOne({ proprietaire: user._id });
 
-          const responseData = {
-            result: true,
-            project: project,
-            editeurLecteur: project.editeurLecteur,
-            lecteur: project.lecteur,
-          };
+  const projectEditeur = await Project.findOne({ editeur: user._id });
 
-          // find all information of the project in differents collections
-          return Promise.all([
-            CarnetBebe.findOne({ carnetBebe: project.carnetBebe }).populate(
-              "project"
-            ),
-            Rdv.findOne({ rdv: project.rdv }).populate("project"),
-            Document.findOne({ document: project.document }).populate(
-              "project"
-            ),
-            Enfant.findOne({ document: project.enfant }).populate("project"),
-          ]).then(([carnetBebeData, rdvData, documentData, enfantData]) => {
-            responseData.carnetBebeArr = carnetBebeData
-              ? carnetBebeData.carnetBebe
-              : [];
-            responseData.rdvArr = rdvData ? rdvData.rdv : [];
-            responseData.documentArr = documentData
-              ? documentData.document
-              : [];
-            responseData.enfantArr = enfantData ? enfantData.enfant : [];
-            responseData.project = project;
-            responseData.token = user.token;
-            responseData.username = user.username;
-            res.json(responseData);
-          });
-        })
-        .catch((error) => {
-          console.error(error);
-          res.json({
-            result: false,
-            error: "Erreur lors de la recherche du projet",
-          });
-        });
+  const projectLecteur = await Project.findOne({ lecteur: user._id });
+
+  // console.log(projectProprietaire);
+  console.log(projectEditeur);
+  // console.log(projectLecteur);
+
+  let role = "";
+  if (projectProprietaire) {
+    role = "propriétaire";
+  } else if (projectEditeur) {
+    role = "editeur";
+  } else if (projectLecteur) {
+    role = "lecteur";
+  } else {
+    // Si aucun projet n'est trouvé, on retourne un message d'erreur
+    return res.json({ result: false, error: "Aucun projet trouvé" });
+  }
+
+  const responseData = {
+    result: true,
+    project: projectProprietaire || projectEditeur || projectLecteur,
+    role: role,
+  };
+
+  // find all information of the project in differents collections
+  return Promise.all([
+    CarnetBebe.findOne({
+      carnetBebe: responseData.project.carnetBebe,
+    }).populate("responseData."),
+    Rdv.findOne({ rdv: responseData.project.rdv }).populate("project"),
+    Document.findOne({ document: responseData.project.document }).populate(
+      "project"
+    ),
+    Enfant.findOne({ document: responseData.project.enfant }).populate(
+      "project"
+    ),
+  ])
+    .then(([carnetBebeData, rdvData, documentData, enfantData]) => {
+      responseData.carnetBebeArr = carnetBebeData
+        ? carnetBebeData.carnetBebe
+        : [];
+      responseData.rdvArr = rdvData ? rdvData.rdv : [];
+      responseData.documentArr = documentData ? documentData.document : [];
+      responseData.enfantArr = enfantData ? enfantData.enfant : [];
+      responseData.project = responseData.project;
+      responseData.token = user.token;
+      responseData.username = user.username;
+      console.log("route result", responseData);
+      res.json({ result: true, response: responseData });
     })
+
+    .catch((error) => {
+      console.error(error);
+      res.json({
+        result: false,
+        error: "Erreur lors de la recherche du projet",
+      });
+    })
+
     .catch((error) => {
       console.error(error);
       res.json({
@@ -259,7 +267,7 @@ router.post("/invites/:tokenProject/:roles", async (req, res) => {
       );
       const data = {
         tokenProject: project.token,
-        tokenUser: saveInvite.token,
+        tokenUser: newUser.token,
         role: "lecteur",
       };
       res.json({
@@ -274,7 +282,7 @@ router.post("/invites/:tokenProject/:roles", async (req, res) => {
       );
       const data2 = {
         tokenProject: project.token,
-        TokenUser: saveInvite.token,
+        TokenUser: newUser.token,
         role: "editeur",
       };
       res.json({
