@@ -111,7 +111,7 @@ router.post("/signin", (req, res) => {
       if (!bcrypt.compareSync(req.body.password, user.password)) {
         return res.json({ result: false, error: "Mot de passe erroné" });
       }
-      console.log(user._id);
+      // console.log(user._id);
       // find project in the Project Collection
       Project.findOne({
         $or: [
@@ -121,8 +121,8 @@ router.post("/signin", (req, res) => {
         ],
       })
         .then((project) => {
-          console.log("test");
-          console.log(project);
+          // console.log("test");
+          // console.log(project);
           if (!project) {
             return res.json({ result: false, error: "Aucun projet trouvé" });
           }
@@ -277,11 +277,6 @@ router.post("/invites/:tokenProject/:roles", async (req, res) => {
         TokenUser: saveInvite.token,
         role: "editeur",
       };
-      // const responseData = {
-      //   project: project,
-      //   project: project.editeurLecteur,
-      //   lecteur: project.lecteur,
-      // };
       res.json({
         result: true,
         message: "compte invité editeur crée",
@@ -303,33 +298,27 @@ router.put("/:tokenProject/:tokenUser", async (req, res) => {
 
   const { username, email, derniereMenstruation, dateDebutGrossesse } =
     req.body;
-  console.log({ username, email, derniereMenstruation, dateDebutGrossesse });
+  // console.log({ username, email, derniereMenstruation, dateDebutGrossesse });
 
   if (!checkBody(req.body, ["username", "email"])) {
-    // console.log("missing field");
-
     return res.json({ result: false, error: "Missing or empty fields" });
   }
 
   try {
-    // console.log("in the try part");
-
     const { tokenProject, tokenUser } = req.params; // Récupération du token et de l'ID du propirétaire
     const project = await Project.findOne({ token: tokenProject });
 
     if (!project) {
       return res.status(404).json({ message: "Projet non trouvé" });
     }
-    // console.log("id in back", id);
 
     // Vérifie si l'utilisateur existe
     const user = await User.findOne({ token: tokenUser });
-    // console.log("user:", user);
 
     if (!user) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
-    // console.log(`_id: ${user._id}`);
+
     await User.findByIdAndUpdate(
       user._id,
       // Met à jour le propriétaire à jour
@@ -371,7 +360,7 @@ router.put("/password/:tokenProject/:tokenUser", async (req, res) => {
     }
 
     const user = await User.findOne({ token: tokenUser });
-    console.log("user:", user);
+    // console.log("user:", user);
     if (!user) {
       return res
         .status(404)

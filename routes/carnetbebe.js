@@ -11,7 +11,7 @@ router.get("/:tokenProject", (req, res) => {
   Project.findOne({ token: req.params.tokenProject })
     .populate("carnetBebe")
     .then((projectdata) => {
-      console.log("test5", projectdata);
+      // console.log("test5", projectdata);
       if (!projectdata) {
         res.json({ result: false, error: "projectbaby inexistant" });
       } else {
@@ -36,12 +36,12 @@ router.post("/ajout/:tokenProject", async (req, res) => {
   try {
     //check si proprietaire du projet pour creer doc
     const user = await User.findOne({ username: req.body.username });
-    console.log("voila user", user);
+    // console.log("voila user", user);
     if (user) {
       const project = await Project.findOne({
         proprietaire: user._id,
       }).populate("proprietaire");
-      console.log("test", project);
+      // console.log("test", project);
       if (project) {
         // res.json({ result: true, response: "vous etes propriétaire" });
 
@@ -55,7 +55,7 @@ router.post("/ajout/:tokenProject", async (req, res) => {
         });
         //save nouveau document carnet bebe
         const saveNewDoc = await newDocCarnetBebe.save();
-        console.log("check new doc", saveNewDoc);
+        // console.log("check new doc", saveNewDoc);
         //ajout du document dans la collection du projet
         project.carnetBebe.push(saveNewDoc);
         await project.save();
@@ -63,7 +63,7 @@ router.post("/ajout/:tokenProject", async (req, res) => {
           message: "mise à jour carnet bébé",
           carnetBebe: saveNewDoc,
         });
-        console.log(saveNewDoc);
+        // console.log(saveNewDoc);
       }
     }
   } catch (error) {

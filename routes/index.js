@@ -7,7 +7,7 @@ router.get("/", function (req, res, next) {
 });
 
 router.get("/ca-marche", (req, res) => {
-  console.log("- dans GET /ca-marche");
+  // console.log("- dans GET /ca-marche");
   res.json({ result: "oui 🚀" });
 });
 

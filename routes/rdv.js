@@ -71,11 +71,11 @@ router.get("/:tokenProject", async (req, res) => {
 
 //route put to update an appointment
 router.put("/:tokenProject/:id", async (req, res) => {
-  console.log("in the route");
-  console.log(req.body);
+  // console.log("in the route");
+  // console.log(req.body);
 
   const { pourQui, practicien, lieu, notes, heure } = req.body;
-  console.log({ pourQui, practicien, lieu, notes, heure });
+  // console.log({ pourQui, practicien, lieu, notes, heure });
 
   if (
     !checkBody(req.body, ["pourQui", "practicien", "lieu", "notes", "heure"])
@@ -122,7 +122,7 @@ router.put("/:tokenProject/:id", async (req, res) => {
       rendezvous: rdv,
     });
   } catch (error) {
-    // console.error("Erreur lors de la mise à jour du rendez-vous :", error);
+    console.error("Erreur lors de la mise à jour du rendez-vous :", error);
     res.status(500).json({ message: "Erreur serveur" });
   }
 });
@@ -152,7 +152,7 @@ router.delete("/:tokenProject/:id", async (req, res) => {
 
     res.json({ result: true, message: "Rendez-vous supprimé" });
   } catch (error) {
-    // console.log(error);
+    console.log(error);
     console.error("Erreur lors de la suppression du rendez-vous");
     res.status(500).json({ message: "Erreur serveur" });
   }

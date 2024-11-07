@@ -9,14 +9,14 @@ const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 
 router.get("/ca_marcher", (req, res) => {
-  console.log("dans GET /documents/ca_marcher");
+  // console.log("dans GET /documents/ca_marcher");
   res.json({ result: true });
 });
 
 router.get("/:tokenProject", async (req, res) => {
-  console.log("dans GET /documents/:tokenProject");
+  // console.log("dans GET /documents/:tokenProject");
 
-  console.log(`req.params.tokenProject: ${req.params.tokenProject}`);
+  // console.log(`req.params.tokenProject: ${req.params.tokenProject}`);
   // check fields
 
   const projectData = await Project.findOne({ token: req.params.tokenProject });
@@ -31,7 +31,7 @@ router.get("/:tokenProject", async (req, res) => {
 });
 
 router.post("/add", async (req, res) => {
-  console.log("dans POST /documents/add");
+  // console.log("dans POST /documents/add");
 
   // check fields
   if (!checkBody(req.body, ["token", "tokenProject"])) {
@@ -41,7 +41,7 @@ router.post("/add", async (req, res) => {
     });
   }
 
-  console.log("-- succesfully passed check");
+  // console.log("-- succesfully passed check");
 
   const userData = await User.findOne({ token: req.body.token });
 
@@ -71,7 +71,7 @@ router.post("/add", async (req, res) => {
 });
 
 router.delete("/:documentId", async (req, res) => {
-  console.log("dans Delete /documents/:documentId");
+  // console.log("dans Delete /documents/:documentId");
 
   const documentId = req.params.documentId;
   const documentData = await Document.findOne({ _id: documentId });
@@ -81,7 +81,7 @@ router.delete("/:documentId", async (req, res) => {
   }
   const projectData = await Project.findOne({ document: documentData._id });
 
-  console.log("------- projectData trouve ----------");
+  // console.log("------- projectData trouve ----------");
 
   // étape 1: supprimer documentId de le project dans le collection project
   projectData.document.pull(documentId);
@@ -89,39 +89,39 @@ router.delete("/:documentId", async (req, res) => {
 
   // étape 2: supprimer document de collection document
   await Document.deleteOne({ _id: documentId });
-  console.log("documentId supprimer: ", documentId);
+  // console.log("documentId supprimer: ", documentId);
 
-  console.log(projectData);
+  // console.log(projectData);
 
   res.json({ result: true, documentId });
 });
 
 router.post("/uploadPhoto", async (req, res) => {
-  console.log("dans POST /documents/uploadPhoto");
+  // console.log("dans POST /documents/uploadPhoto");
 
   if (!req.files?.photoFromFront) {
-    console.log("- il n'y a pas de bon truc dedans");
-    console.log("req.files: ", req.files);
+    // console.log("- il n'y a pas de bon truc dedans");
+    // console.log("req.files: ", req.files);
     return res.json({ result: false, message: "no file" });
   }
-  console.log(
-    `recieved photoFromFront (name): ${req.files.photoFromFront.name}`
-  );
+  // console.log(
+  //   `recieved photoFromFront (name): ${req.files.photoFromFront.name}`
+  // );
   // console.log(`formData: ${req.body.formData}`);
   // console.log(`photo name: ${req.body.formData.name}`);
 
   const photoPath = `./tmp/${req.files.photoFromFront.name}`;
-  console.log(`- photoPath: ${photoPath}`);
+  // console.log(`- photoPath: ${photoPath}`);
   // const photoPath = `./tmp/photo.jpg`;
   const resultMove = await req.files.photoFromFront.mv(photoPath);
-  console.log(`- supprimer de ${photoPath}`);
+  // console.log(`- supprimer de ${photoPath}`);
   if (!resultMove) {
     // on s'attendre que resultMove est undefinied
     const resultCloudinary = await cloudinary.uploader.upload(photoPath);
 
     fs.unlinkSync(photoPath);
 
-    console.log(`resultCloudinary.secure_url: ${resultCloudinary.secure_url}`);
+    // console.log(`resultCloudinary.secure_url: ${resultCloudinary.secure_url}`);
 
     res.json({ result: true, url: resultCloudinary.secure_url });
   } else {
