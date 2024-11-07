@@ -356,7 +356,6 @@ router.put("/:tokenProject/:tokenUser", async (req, res) => {
 //route put to update password
 router.put("/password/:tokenProject/:tokenUser", async (req, res) => {
   const { oldPassword, newPassword } = req.body;
-  console.log("missing field");
 
   if (!checkBody(req.body, ["oldPassword", "newPassword"])) {
     // console.log("missing field");
@@ -370,7 +369,6 @@ router.put("/password/:tokenProject/:tokenUser", async (req, res) => {
     if (!project) {
       return res.status(404).json({ message: "Projet non trouvé" });
     }
-    // console.log("id in back", id);
 
     const user = await User.findOne({ token: tokenUser });
     console.log("user:", user);
