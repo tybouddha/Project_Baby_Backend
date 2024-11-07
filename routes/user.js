@@ -64,7 +64,6 @@ router.post("/signupProject", async (req, res) => {
       carnetBebe: req.body.carnetBebe || [],
       rdv: req.body.rdv || [],
       document: req.body.document || [],
-      enfant: req.body.enfant || [],
     });
     //save project
     const savedProject = await newProject.save();
@@ -148,17 +147,13 @@ router.post("/signin", async (req, res) => {
     Document.findOne({ document: responseData.project.document }).populate(
       "project"
     ),
-    Enfant.findOne({ document: responseData.project.enfant }).populate(
-      "project"
-    ),
   ])
-    .then(([carnetBebeData, rdvData, documentData, enfantData]) => {
+    .then(([carnetBebeData, rdvData, documentData]) => {
       responseData.carnetBebeArr = carnetBebeData
         ? carnetBebeData.carnetBebe
         : [];
       responseData.rdvArr = rdvData ? rdvData.rdv : [];
       responseData.documentArr = documentData ? documentData.document : [];
-      responseData.enfantArr = enfantData ? enfantData.enfant : [];
       responseData.project = responseData.project;
       responseData.token = user.token;
       responseData.username = user.username;
