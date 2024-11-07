@@ -5,7 +5,6 @@ const User = require("../models/user");
 const Project = require("../models/project");
 const Document = require("../models/document");
 const CarnetBebe = require("../models/carnetBebe");
-const Enfant = require("../models/enfant");
 const Rdv = require("../models/rdv");
 const { checkBody } = require("../modules/checkbody");
 const uid2 = require("uid2");

@@ -3,7 +3,6 @@ var router = express.Router();
 const { checkBody } = require("../modules/checkbody");
 const carnetBebe = require("../models/carnetBebe");
 const Project = require("../models/project");
-const enfant = require("../models/enfant");
 const User = require("../models/user");
 
 /* GET home page. */
