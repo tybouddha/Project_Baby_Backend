@@ -13,9 +13,12 @@ var carnetbebeRouter = require("./routes/carnetbebe");
 var documentRouter = require("./routes/document");
 
 var app = express();
+
+const cors = require("cors"); // CORS INSTALL
+app.use(cors());
+
 const fileUpload = require("express-fileupload");
 app.use(fileUpload());
-const cors = require("cors"); // CORS INSTALL
 
 app.use(logger("dev"));
 app.use(express.json());
