@@ -110,7 +110,7 @@ router.post("/uploadPhoto", async (req, res) => {
   // console.log(`formData: ${req.body.formData}`);
   // console.log(`photo name: ${req.body.formData.name}`);
 
-  const photoPath = `/tmp/${req.files.photoFromFront.name}`;
+  const photoPath = `./tmp/${req.files.photoFromFront.name}`;
   // console.log(`- photoPath: ${photoPath}`);
   // const photoPath = `./tmp/photo.jpg`;
   const resultMove = await req.files.photoFromFront.mv(photoPath);
