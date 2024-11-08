@@ -1,6 +1,6 @@
 var express = require("express");
 var router = express.Router();
-require("../models/connection");
+
 const Rdv = require("../models/rdv");
 const Project = require("../models/project");
 const { checkBody } = require("../modules/checkbody");
