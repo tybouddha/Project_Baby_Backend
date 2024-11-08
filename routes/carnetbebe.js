@@ -71,6 +71,7 @@ router.post("/ajout/:tokenProject", async (req, res) => {
     res.status(500).json({ message: "Erreur serveur" });
   }
 });
+
 router.delete("/:tokenProject/:id", async (req, res) => {
   try {
     const { tokenProject, id } = req.params; // Récupération du token et de l'ID du rendez-vous
