@@ -1,13 +1,14 @@
-var express = require("express");
-var router = express.Router();
-const User = require("../models/user");
-const Project = require("../models/project");
-const Document = require("../models/document");
-const CarnetBebe = require("../models/carnetBebe");
-const Rdv = require("../models/rdv");
-const { checkBody } = require("../modules/checkbody");
-const uid2 = require("uid2");
-const bcrypt = require("bcrypt");
+var express = require("express"); // Importation d'Express, un framework Node.js pour créer des serveurs web.
+var router = express.Router(); // Création d'un routeur Express pour définir des routes modulaires.
+require("../models/connection"); // Chargement de la connexion à la base de données (MongoDB dans ce cas).
+const User = require("../models/user"); // Importation du modèle User pour interagir avec la collection `users`.
+const Project = require("../models/project"); // Importation du modèle Project pour interagir avec la collection `projects`.
+const Document = require("../models/document"); // Modèle pour gérer les documents liés aux projets.
+const CarnetBebe = require("../models/carnetBebe"); // Modèle pour gérer les carnets bébé liés aux projets.
+const Rdv = require("../models/rdv"); // Modèle pour gérer les rendez-vous liés aux projets.
+const { checkBody } = require("../modules/checkbody"); // Importation d'une fonction utilitaire pour vérifier si des champs sont présents dans une requête.
+const uid2 = require("uid2"); // Bibliothèque pour générer des tokens uniques (identifiants).
+const bcrypt = require("bcrypt"); // Bibliothèque pour hasher et comparer les mots de passe.
 
 //Route signup without invit
 router.post("/signupProject", async (req, res) => {

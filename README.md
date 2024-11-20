@@ -57,3 +57,17 @@ Installation
 const fileUpload = require("express-fileupload");
 app.use(fileUpload());
 ```
+
+### /tmp
+
+#### pour vercel
+
+- changer
+- ajouter .gitkeep dans /tmp
+
+## Cors
+
+```js
+const cors = require("cors");
+app.use(cors());
+```
